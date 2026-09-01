@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Tienda Genérica</title>
+<link rel="stylesheet" href="css/estilo.css">
+</head>
+<body>
+  <div class="banner-demo">Modo demo (sin backend ni AWS) — los datos viven en este navegador</div>
+  <div class="topbar">
+    <h1>Tienda Genérica</h1>
+    <nav>
+      <a href="usuarios.html">Usuarios</a>
+      <a href="clientes.html">Clientes</a>
+      <a href="proveedores.html">Proveedores</a>
+      <a href="productos.html">Productos</a>
+      <a href="ventas.html">Ventas</a>
+      <a href="reportes.html">Reportes</a>
+      <a href="index.html" onclick="localStorage.removeItem('tg_sesion')">Salir</a>
+    </nav>
+  </div>
+  <div class="container">
+    <h2>Panel principal</h2>
+    <p>Seleccione un módulo en el menú superior para comenzar.</p>
+    <p style="color:#888; font-size:13px;">Puede restablecer todos los datos de la demo (usuario admininicial, proveedores de ejemplo, y borrar clientes/productos/ventas creados) con el siguiente botón:</p>
+    <button onclick="if(confirm('¿Restablecer todos los datos de la demo?')){DB.reset(); alert('Datos restablecidos');}">Restablecer datos de la demo</button>
+  </div>
+  <script src="js/db.js"></script>
+</body>
+</html>
