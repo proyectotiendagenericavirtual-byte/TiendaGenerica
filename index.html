@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Tienda Genérica - Login</title>
+<link rel="stylesheet" href="css/estilo.css">
+</head>
+<body>
+  <div class="banner-demo">Modo demo: los datos se guardan en este navegador (sin backend ni AWS). Usuario inicial: <b>admininicial</b> / <b>admin123456</b></div>
+  <div class="container" style="max-width:400px; margin-top:60px;">
+    <h2>Bienvenidos a la Tienda Genérica</h2>
+    <label>Usuario</label><br>
+    <input type="text" id="usuario"><br>
+    <label>Contraseña</label><br>
+    <input type="password" id="password"><br>
+    <button onclick="ingresar()">Aceptar</button>
+    <button type="button" onclick="document.getElementById('usuario').value='';document.getElementById('password').value='';">Cancelar</button>
+    <div id="mensaje"></div>
+  </div>
+
+  <script src="js/db.js"></script>
+  <script>
+    function ingresar() {
+      const usuario = document.getElementById('usuario').value;
+      const password = document.getElementById('password').value;
+      const mensaje = document.getElementById('mensaje');
+
+      const usuarios = DB.get(DB.KEYS.usuarios);
+      const encontrado = usuarios.find(u => u.usuario === usuario && u.password === password);
+
+      if (encontrado) {
+        DB.set(DB.KEYS.sesion, encontrado);
+        window.location.href = 'menu.html';
+      } else {
+        mensaje.innerHTML = '<div class="msg error">usuario o contraseña errados, intente de nuevo</div>';
+      }
+    }
+  </script>
+</body>
+</html>
