@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Tienda Genérica - Productos</title>
+<link rel="stylesheet" href="css/estilo.css">
+</head>
+<body>
+  <div class="banner-demo">Modo demo (sin backend ni AWS) — los datos viven en este navegador</div>
+  <div class="topbar">
+    <h1>Tienda Genérica</h1>
+    <nav>
+      <a href="usuarios.html">Usuarios</a>
+      <a href="clientes.html">Clientes</a>
+      <a href="proveedores.html">Proveedores</a>
+      <a href="productos.html" class="active">Productos</a>
+      <a href="ventas.html">Ventas</a>
+      <a href="reportes.html">Reportes</a>
+      <a href="index.html">Salir</a>
+    </nav>
+  </div>
+
+  <div class="container">
+    <h2>Gestión de Productos</h2>
+    <p>Cargue de archivo texto separado por comas (CSV) con la estructura:
+    <br><code>código_producto, nombre_producto, nitproveedor, precio_compra, ivacompra, precio_venta</code></p>
+    <p style="font-size:12px;color:#888;">(el repositorio incluye <code>database_productos_muestra.csv</code> para probar)</p>
+
+    <label>Nombre del Archivo</label>
+    <input type="file" id="archivo" accept=".csv,.txt"><br>
+    <button onclick="cargar()">Cargar</button>
+    <button onclick="listar()">Listar Productos</button>
+
+    <div id="mensaje"></div>
+    <div id="tablaResultado"></div>
+  </div>
+
+  <script src="js/db.js"></script>
+  <script>
+    function mostrarMensaje(texto, tipo) {
+      document.getElementById('mensaje').innerHTML = texto ? `<div class="msg ${tipo}">${texto}</div>` : '';
+    }
+
+    function cargar() {
+      const input = document.getElementById('archivo');
+      if (!input.files.length) {
+        mostrarMensaje('Error: no se seleccionó archivo para cargar', 'error');
+        return;
+      }
+      const archivo = input.files[0];
+      if (!archivo.name.toLowerCase().endsWith('.csv') && !archivo.name.toLowerCase().endsWith('.txt')) {
+        mostrarMensaje('Error: formato de archivo inválido', 'error');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        const proveedores = DB.get(DB.KEYS.proveedores);
+        const lineas = e.target.result.split(/\r?\n/).filter(l => l.trim().length);
+        const nuevosProductos = [];
+
+        for (const linea of lineas) {
+          const campos = linea.split(',');
+          if (campos.length !== 6) {
+            mostrarMensaje('Error: formato de archivo inválido', 'error');
+            return;
+          }
+          const codigoProducto = Number(campos[0].trim());
+          const nombreProducto = campos[1].trim();
+          const nitProveedor = Number(campos[2].trim());
+          const precioCompra = Number(campos[3].trim());
+          const ivaCompra = Number(campos[4].trim());
+          const precioVenta = Number(campos[5].trim());
+
+          if ([codigoProducto, nitProveedor, precioCompra, ivaCompra, precioVenta].some(v => Number.isNaN(v))) {
+            mostrarMensaje('Error: datos leídos inválidos', 'error');
+            return;
+          }
+          if (!proveedores.some(p => p.nitProveedor === nitProveedor)) {
+            mostrarMensaje(`Error: datos leídos inválidos (NIT de proveedor inexistente: ${nitProveedor})`, 'error');
+            return;
+          }
+          nuevosProductos.push({ codigoProducto, nombreProducto, nitProveedor, precioCompra, ivaCompra, precioVenta });
+        }
+
+        DB.set(DB.KEYS.productos, nuevosProductos);
+        mostrarMensaje('Archivo Cargado Exitosamente', 'ok');
+        listar();
+      };
+      reader.readAsText(archivo, 'UTF-8');
+    }
+
+    function listar() {
+      const lista = DB.get(DB.KEYS.productos);
+      if (!lista.length) { mostrarMensaje('No existen productos registrados', 'error'); document.getElementById('tablaResultado').innerHTML=''; return; }
+      let html = '<table><tr><th>Código</th><th>Nombre</th><th>NIT Proveedor</th><th>Precio Compra</th><th>IVA Compra</th><th>Precio Venta</th></tr>';
+      lista.forEach(p => html += `<tr><td>${p.codigoProducto}</td><td>${p.nombreProducto}</td><td>${p.nitProveedor}</td><td>${p.precioCompra}</td><td>${p.ivaCompra}</td><td>${p.precioVenta}</td></tr>`);
+      html += '</table>';
+      document.getElementById('tablaResultado').innerHTML = html;
+    }
+  </script>
+</body>
+</html>
