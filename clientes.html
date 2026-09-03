@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Tienda Genérica - Clientes</title>
+<link rel="stylesheet" href="css/estilo.css">
+</head>
+<body>
+  <div class="banner-demo">Modo demo (sin backend ni AWS) — los datos viven en este navegador</div>
+  <div class="topbar">
+    <h1>Tienda Genérica</h1>
+    <nav>
+      <a href="usuarios.html">Usuarios</a>
+      <a href="clientes.html" class="active">Clientes</a>
+      <a href="proveedores.html">Proveedores</a>
+      <a href="productos.html">Productos</a>
+      <a href="ventas.html">Ventas</a>
+      <a href="reportes.html">Reportes</a>
+      <a href="index.html">Salir</a>
+    </nav>
+  </div>
+
+  <div class="container">
+    <h2>Gestión de Clientes</h2>
+
+    <label>Cédula</label>
+    <input type="text" id="cedulaCliente"><br>
+    <label>Nombre Completo</label>
+    <input type="text" id="nombreCliente"><br>
+    <label>Dirección</label>
+    <input type="text" id="direccionCliente"><br>
+    <label>Teléfono</label>
+    <input type="text" id="telefonoCliente"><br>
+    <label>Correo Electrónico</label>
+    <input type="text" id="emailCliente"><br>
+
+    <button onclick="consultar()">Consultar</button>
+    <button onclick="crear()">Crear</button>
+    <button onclick="actualizar()">Actualizar</button>
+    <button onclick="borrar()">Borrar</button>
+    <button onclick="listar()">Listar Clientes</button>
+
+    <div id="mensaje"></div>
+    <div id="tablaResultado"></div>
+  </div>
+
+  <script src="js/db.js"></script>
+  <script>
+    function limpiar() {
+      ['cedulaCliente','nombreCliente','direccionCliente','telefonoCliente','emailCliente'].forEach(id => {
+        document.getElementById(id).value = '';
+      });
+    }
+    function mostrarMensaje(texto, tipo) {
+      document.getElementById('mensaje').innerHTML = texto ? `<div class="msg ${tipo}">${texto}</div>` : '';
+    }
+    function armarObjeto() {
+      return {
+        cedulaCliente: Number(document.getElementById('cedulaCliente').value),
+        nombreCliente: document.getElementById('nombreCliente').value,
+        direccionCliente: document.getElementById('direccionCliente').value,
+        telefonoCliente: document.getElementById('telefonoCliente').value,
+        emailCliente: document.getElementById('emailCliente').value
+      };
+    }
+
+    function crear() {
+      const c = armarObjeto();
+      if (!c.cedulaCliente || !c.nombreCliente || !c.direccionCliente || !c.telefonoCliente || !c.emailCliente) {
+        mostrarMensaje('Faltan datos del cliente', 'error'); return;
+      }
+      const lista = DB.get(DB.KEYS.clientes);
+      if (lista.some(x => x.cedulaCliente === c.cedulaCliente)) {
+        mostrarMensaje('Ya existe un cliente con esa cédula', 'error'); return;
+      }
+      lista.push(c);
+      DB.set(DB.KEYS.clientes, lista);
+      mostrarMensaje('Cliente Creado', 'ok');
+      limpiar();
+    }
+
+    function consultar() {
+      const cedula = document.getElementById('cedulaCliente').value;
+      if (!cedula) { mostrarMensaje('Ingrese la cédula a consultar', 'error'); return; }
+      const lista = DB.get(DB.KEYS.clientes);
+      const encontrado = lista.find(x => String(x.cedulaCliente) === String(cedula));
+      if (encontrado) {
+        document.getElementById('nombreCliente').value = encontrado.nombreCliente || '';
+        document.getElementById('direccionCliente').value = encontrado.direccionCliente || '';
+        document.getElementById('telefonoCliente').value = encontrado.telefonoCliente || '';
+        document.getElementById('emailCliente').value = encontrado.emailCliente || '';
+        mostrarMensaje('Cliente encontrado', 'ok');
+      } else {
+        mostrarMensaje('Cliente Inexistente', 'error');
+      }
+    }
+
+    function actualizar() {
+      const c = armarObjeto();
+      if (!c.cedulaCliente || !c.nombreCliente || !c.direccionCliente || !c.telefonoCliente || !c.emailCliente) {
+        mostrarMensaje('Datos faltantes', 'error'); return;
+      }
+      let lista = DB.get(DB.KEYS.clientes);
+      const idx = lista.findIndex(x => x.cedulaCliente === c.cedulaCliente);
+      if (idx === -1) { mostrarMensaje('Cédula Errada', 'error'); return; }
+      lista[idx] = c;
+      DB.set(DB.KEYS.clientes, lista);
+      mostrarMensaje('Datos del Cliente Actualizados', 'ok');
+      limpiar();
+    }
+
+    function borrar() {
+      const cedula = document.getElementById('cedulaCliente').value;
+      let lista = DB.get(DB.KEYS.clientes);
+      const existe = lista.some(x => String(x.cedulaCliente) === String(cedula));
+      if (!existe) { mostrarMensaje('Cédula Errada', 'error'); return; }
+      lista = lista.filter(x => String(x.cedulaCliente) !== String(cedula));
+      DB.set(DB.KEYS.clientes, lista);
+      mostrarMensaje('Datos del Cliente Borrados', 'ok');
+      limpiar();
+    }
+
+    function listar() {
+      const lista = DB.get(DB.KEYS.clientes);
+      if (!lista.length) { mostrarMensaje('No existen clientes registrados', 'error'); document.getElementById('tablaResultado').innerHTML=''; return; }
+      mostrarMensaje('', '');
+      let html = '<table><tr><th>Cédula</th><th>Nombre</th><th>Dirección</th><th>Teléfono</th><th>Correo</th></tr>';
+      lista.forEach(c => html += `<tr><td>${c.cedulaCliente}</td><td>${c.nombreCliente}</td><td>${c.direccionCliente}</td><td>${c.telefonoCliente}</td><td>${c.emailCliente}</td></tr>`);
+      html += '</table>';
+      document.getElementById('tablaResultado').innerHTML = html;
+    }
+  </script>
+</body>
+</html>
