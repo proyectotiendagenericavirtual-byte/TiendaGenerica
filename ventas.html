@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Tienda Genérica - Ventas</title>
+<link rel="stylesheet" href="css/estilo.css">
+</head>
+<body>
+  <div class="banner-demo">Modo demo (sin backend ni AWS) — los datos viven en este navegador</div>
+  <div class="topbar">
+    <h1>Tienda Genérica</h1>
+    <nav>
+      <a href="usuarios.html">Usuarios</a>
+      <a href="clientes.html">Clientes</a>
+      <a href="proveedores.html">Proveedores</a>
+      <a href="productos.html">Productos</a>
+      <a href="ventas.html" class="active">Ventas</a>
+      <a href="reportes.html">Reportes</a>
+      <a href="index.html">Salir</a>
+    </nav>
+  </div>
+
+  <div class="container">
+    <h2>Registro de Ventas</h2>
+
+    <label>Cédula Cliente</label>
+    <input type="text" id="cedulaCliente">
+    <button onclick="consultarCliente()">Consultar</button>
+    <label>Cliente</label>
+    <input type="text" id="nombreCliente" disabled><br>
+    <label>Consecutivo</label>
+    <input type="text" id="consecutivo" disabled><br>
+
+    <table id="tablaProductos">
+      <tr><th>Cód. Producto</th><th></th><th>Nombre Producto</th><th>Cant.</th><th>Vlr. Total</th></tr>
+      <tr>
+        <td><input type="text" id="cod0" style="width:100px"></td>
+        <td><button onclick="consultarProducto(0)">Consultar</button></td>
+        <td><input type="text" id="nom0" style="width:180px" disabled></td>
+        <td><input type="number" id="cant0" style="width:60px" onchange="calcularFila(0)"></td>
+        <td><input type="text" id="tot0" style="width:100px" disabled></td>
+      </tr>
+      <tr>
+        <td><input type="text" id="cod1" style="width:100px"></td>
+        <td><button onclick="consultarProducto(1)">Consultar</button></td>
+        <td><input type="text" id="nom1" style="width:180px" disabled></td>
+        <td><input type="number" id="cant1" style="width:60px" onchange="calcularFila(1)"></td>
+        <td><input type="text" id="tot1" style="width:100px" disabled></td>
+      </tr>
+      <tr>
+        <td><input type="text" id="cod2" style="width:100px"></td>
+        <td><button onclick="consultarProducto(2)">Consultar</button></td>
+        <td><input type="text" id="nom2" style="width:180px" disabled></td>
+        <td><input type="number" id="cant2" style="width:60px" onchange="calcularFila(2)"></td>
+        <td><input type="text" id="tot2" style="width:100px" disabled></td>
+      </tr>
+    </table>
+
+    <br>
+    <label>Total Venta</label>
+    <input type="text" id="totalVenta" disabled><br>
+    <label>Total IVA</label>
+    <input type="text" id="totalIva" disabled><br>
+    <label>Total con IVA</label>
+    <input type="text" id="totalConIva" disabled><br>
+
+    <button onclick="totalizar()">Totalizar</button>
+    <button onclick="confirmar()">Confirmar</button>
+
+    <div id="mensaje"></div>
+  </div>
+
+  <script src="js/db.js"></script>
+  <script>
+    const productosSel = [null, null, null];
+
+    function mostrarMensaje(texto, tipo) {
+      document.getElementById('mensaje').innerHTML = texto ? `<div class="msg ${tipo}">${texto}</div>` : '';
+    }
+
+    function consultarCliente() {
+      const cedula = document.getElementById('cedulaCliente').value;
+      if (!cedula) { mostrarMensaje('Ingrese la cédula del cliente', 'error'); return; }
+      const lista = DB.get(DB.KEYS.clientes);
+      const c = lista.find(x => String(x.cedulaCliente) === String(cedula));
+      if (c) {
+        document.getElementById('nombreCliente').value = c.nombreCliente;
+        mostrarMensaje('Cliente encontrado', 'ok');
+      } else {
+        document.getElementById('nombreCliente').value = '';
+        mostrarMensaje('La cédula no se encuentra registrada en la base de datos', 'error');
+      }
+    }
+
+    function consultarProducto(i) {
+      const codigo = document.getElementById(`cod${i}`).value;
+      if (!codigo) { mostrarMensaje('Ingrese el código del producto', 'error'); return; }
+      const lista = DB.get(DB.KEYS.productos);
+      const p = lista.find(x => String(x.codigoProducto) === String(codigo));
+      if (p) {
+        document.getElementById(`nom${i}`).value = p.nombreProducto;
+        productosSel[i] = p;
+        mostrarMensaje('Producto encontrado', 'ok');
+      } else {
+        document.getElementById(`nom${i}`).value = '';
+        productosSel[i] = null;
+        mostrarMensaje('El código de producto no se encuentra registrado en la base de datos', 'error');
+      }
+    }
+
+    function calcularFila(i) {
+      const cantidad = Number(document.getElementById(`cant${i}`).value);
+      const p = productosSel[i];
+      if (!p) { return; }
+      if (!cantidad || cantidad <= 0) {
+        mostrarMensaje('El valor de cantidad es incorrecto', 'error');
+        document.getElementById(`tot${i}`).value = '';
+        return;
+      }
+      const total = cantidad * p.precioVenta;
+      document.getElementById(`tot${i}`).value = total.toFixed(2);
+    }
+
+    function totalizar() {
+      let totalVenta = 0;
+      let totalIva = 0;
+      for (let i = 0; i < 3; i++) {
+        const p = productosSel[i];
+        const cantidad = Number(document.getElementById(`cant${i}`).value);
+        if (p && cantidad > 0) {
+          const subtotal = cantidad * p.precioVenta;
+          const iva = subtotal * (p.ivaCompra / 100);
+          totalVenta += subtotal;
+          totalIva += iva;
+        }
+      }
+      document.getElementById('totalVenta').value = totalVenta.toFixed(2);
+      document.getElementById('totalIva').value = totalIva.toFixed(2);
+      document.getElementById('totalConIva').value = (totalVenta + totalIva).toFixed(2);
+    }
+
+    function confirmar() {
+      const cedulaCliente = Number(document.getElementById('cedulaCliente').value);
+      const sesion = DB.get(DB.KEYS.sesion) || {};
+      const cedulaUsuario = sesion.cedulaUsuario || 1;
+
+      totalizar();
+      const totalVenta = Number(document.getElementById('totalVenta').value);
+      const totalIva = Number(document.getElementById('totalIva').value);
+      const totalConIva = Number(document.getElementById('totalConIva').value);
+
+      if (!cedulaCliente || !totalVenta) {
+        mostrarMensaje('Complete los datos del cliente y al menos un producto antes de confirmar', 'error');
+        return;
+      }
+
+      const codigoVenta = DB.siguienteConsecutivo(DB.KEYS.consecutivoVenta);
+      const venta = {
+        codigoVenta,
+        cedulaCliente,
+        cedulaUsuario,
+        ivaVenta: totalIva,
+        totalVenta: totalConIva,
+        valorVenta: totalVenta
+      };
+      const ventas = DB.get(DB.KEYS.ventas);
+      ventas.push(venta);
+      DB.set(DB.KEYS.ventas, ventas);
+      document.getElementById('consecutivo').value = codigoVenta;
+
+      const detalles = DB.get(DB.KEYS.detalleVentas);
+      for (let i = 0; i < 3; i++) {
+        const p = productosSel[i];
+        const cantidad = Number(document.getElementById(`cant${i}`).value);
+        if (p && cantidad > 0) {
+          detalles.push({
+            codigoDetalleVenta: DB.siguienteConsecutivo(DB.KEYS.consecutivoDetalle),
+            cantidadProducto: cantidad,
+            codigoProducto: p.codigoProducto,
+            codigoVenta,
+            valorTotal: cantidad * p.precioVenta,
+            valorVenta: p.precioVenta,
+            valorIva: (cantidad * p.precioVenta) * (p.ivaCompra / 100)
+          });
+        }
+      }
+      DB.set(DB.KEYS.detalleVentas, detalles);
+
+      mostrarMensaje(`Venta registrada con éxito. Consecutivo: ${codigoVenta}`, 'ok');
+    }
+  </script>
+</body>
+</html>
